@@ -351,6 +351,26 @@ Page({
     });
   },
 
+  bindCampusContact() {
+    const campusToContactMap = {
+      "紫金港校区": "some wxid",
+      "玉泉校区": "some wxid",
+      "之江校区": "some wxid",
+    }
+    console.log(this.data.cat.campus)
+    wx.showModal({
+      title: this.data.cat.campus+'联系人',
+      content: campusToContactMap[this.data.cat.campus],
+      success (res) {
+        if (res.confirm) {
+          console.log('用户点击确定')
+        } else if (res.cancel) {
+          console.log('用户点击取消')
+        }
+      }
+    })
+  }, 
+
   async bindTapPhoto(e) {
     wx.showLoading({
       title: '正在加载...',

@@ -109,6 +109,10 @@
           </view>
         </scroll-view>
       </view>
+      <!-- 只在寻找领养中增加联系人按钮 -->
+      <view class='tag' wx:if="{{cat.adopt != undefined && cat.adopt == 2}}">
+        <text class='fb-button' bindtap='bindCampusContact'>校区领养联系人</text>
+      </view>
     </view>
   </view>
   <!-- info end -->

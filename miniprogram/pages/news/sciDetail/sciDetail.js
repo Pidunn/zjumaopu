@@ -2,8 +2,7 @@ import {
   text as text_cfg,
   science_imgs
 } from "../../../config";
-import { cloud } from "../../../utils/cloudAccess";
-import api from "../../../utils/cloudApi";
+import api from "../../../cloudApi";
 const cates = ['猫咪救助', '撸猫指南', '猫咪领养', '猫咪喂养', '猫咪健康'];
 const share_text = text_cfg.app_name + ' - ' + text_cfg.science.share_tip;
 
@@ -27,10 +26,18 @@ Page({
       cate_active: cates[cate_current]
     });
 
-    let images = await Promise.all(science_imgs.map(val => cloud.signCosUrl(val)));
-    this.setData({
-      images: images
-    })
+    //封面图缓存
+    if (options.coverImgList) {
+      const imgList = options.coverImgList.split(',')
+      this.setData({
+        images: imgList
+      })
+    } else {
+      let images = await Promise.all(science_imgs.map(val => cloud.signCosUrl(val)));
+      this.setData({
+        images: images
+      })
+    }
 
     await this.getSci();
   },

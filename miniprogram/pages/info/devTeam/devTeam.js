@@ -3,6 +3,7 @@ import { text as text_cfg } from "../../../config";
 const share_text = text_cfg.app_name + ' - ' + text_cfg.info.share_tip;
 
 Page({
+
   /**
    * 页面的初始数据
    */

@@ -1,9 +1,9 @@
 // 处理反馈
-import { formatDate } from "../../../utils/utils";
-import { sendReplyNotice } from "../../../utils/msg";
-import { checkAuth, getUserInfo } from "../../../utils/user";
-import { cloud } from "../../../utils/cloudAccess";
-import api from "../../../utils/cloudApi";
+import { formatDate } from "../../../utils";
+import { sendReplyNotice } from "../../../msg";
+import { checkAuth, getUserInfo } from "../../../user";
+import { cloud } from "../../../cloudAccess";
+import api from "../../../cloudApi";
 
 Page({
 
@@ -36,7 +36,7 @@ Page({
     wx.showLoading({
       title: '加载中...',
     });
-    const db = await cloud.databaseAsync();
+    const db = cloud.database();
     var res = await db.collection('feedback').doc(options.fb_id).get();
     console.log(res);
     if (!res.data.userInfo) {

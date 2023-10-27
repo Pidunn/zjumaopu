@@ -1,9 +1,9 @@
 // 处理反馈
-import { formatDate } from "../../../utils/utils";
-import { requestNotice, getMsgTplId } from "../../../utils/msg";
-import { checkAuth, fillUserInfo } from "../../../utils/user";
-import { cloud } from "../../../utils/cloudAccess";
-import api from "../../../utils/cloudApi";
+import { formatDate } from "../../../utils";
+import { requestNotice, getMsgTplId } from "../../../msg";
+import { checkAuth, fillUserInfo } from "../../../user";
+import { cloud } from "../../../cloudAccess";
+import api from "../../../cloudApi";
 
 const step = 6;
 
@@ -35,7 +35,7 @@ Page({
   },
 
   async loadFeedbacks() {
-    const db = await cloud.databaseAsync();
+    const db = cloud.database();
     const nowLoaded = this.data.feedbacks.length;
     var feedbacks = (await db.collection('feedback').where({
       dealed: this.data.checkHistory
@@ -72,7 +72,7 @@ Page({
     wx.showLoading({
       title: '加载中...',
     });
-    const db = await cloud.databaseAsync();
+    const db = cloud.database();
     var fbRes = await db.collection('feedback').where({
       dealed: this.data.checkHistory
     }).count();

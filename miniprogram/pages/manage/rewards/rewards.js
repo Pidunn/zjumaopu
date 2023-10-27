@@ -1,7 +1,7 @@
-import { formatDate } from "../../../utils/utils";
-import { checkAuth } from "../../../utils/user";
-import { cloud } from "../../../utils/cloudAccess";
-import api from "../../../utils/cloudApi";
+import { formatDate } from "../../../utils";
+import { checkAuth } from "../../../user";
+import { cloud } from "../../../cloudAccess";
+import api from "../../../cloudApi";
 
 Page({
 
@@ -29,10 +29,9 @@ Page({
     wx.showLoading({
       title: '加载投喂记录中',
     })
-    const db = await cloud.databaseAsync();
-    var res = await db.collection('reward').orderBy('recordDate', 'desc').orderBy('mdate', 'desc').get();
+    const db = cloud.database();
+    var res = await db.collection('reward').orderBy('mdate', 'desc').get();
     for (var r of res.data) {
-      r.mdate = r.recordDate ? new Date(r.recordDate) : new Date(r.mdate);
       r.mdateStr = r.mdate.getFullYear() + '年' + (r.mdate.getMonth() + 1) + '月';
       r.records_raw = r.records;
       r.records = r.records.replace(/^\#+|\#+$/g, '').split('#');
@@ -66,7 +65,7 @@ Page({
     console.log(rewards[index]);
     var reward_to_change = {
       _id: rewards[index]._id,
-      mdate: new Date(rewards[index].mdate),
+      mdate: rewards[index].mdate,
       records: records_raw,
     }
     const that = this;
@@ -77,7 +76,6 @@ Page({
         collection: "reward",
         item_id: reward_to_change._id,
         data: {
-          recordDate: reward_to_change.mdate,
           records: reward_to_change.records
         }
       });
@@ -87,7 +85,6 @@ Page({
         operation: "add",
         collection: "reward",
         data: {
-          recordDate: reward_to_change.mdate,
           records: reward_to_change.records
         }
       });

@@ -4,20 +4,20 @@ import {
   getDeltaHours,
   sleep,
   getCurrentPath
-} from "../../utils/utils";
+} from "../../utils";
 import {
   getAvatar,
   getVisitedDate
-} from "../../utils/cat";
+} from "../../cat";
 import {
   getCatCommentCount
-} from "../../utils/comment";
-import { getUserInfo } from "../../utils/user";
-import cache from "../../utils/cache";
+} from "../../comment";
+import { getUserInfo } from "../../user";
+import cache from "../../cache";
 import config from "../../config";
-import { loadFilter, getGlobalSettings, showTab } from "../../utils/page";
-import { isManagerAsync, checkCanShowNews } from "../../utils/user";
-import { cloud } from "../../utils/cloudAccess";
+import { loadFilter, getGlobalSettings, showTab } from "../../page";
+import { isManagerAsync, checkCanShowNews } from "../../user";
+import { cloud } from "../../cloudAccess";
 
 const default_png = undefined;
 
@@ -96,7 +96,7 @@ Page({
       console.log("scene:", scene);
       if (scene.startsWith('toC=')) {
         const cat_No = scene.substr(4);
-        const db = await cloud.databaseAsync();
+        const db = cloud.database();
         var cat_res = await db.collection('cat').where({
           _no: cat_No
         }).field({
@@ -147,14 +147,6 @@ Page({
   loadFilters: async function (fcampus) {
     // 下面开始加载filters
     var res = await loadFilter();
-    if (!res) {
-      wx.showModal({
-        title: '出错了...',
-        content: '请到关于页，清理缓存后重启试试~',
-        showCancel: false,
-      });
-      return false;
-    }
     var filters = [];
     var area_item = {
       key: 'area',
@@ -183,8 +175,7 @@ Page({
       area_item.category.push(classifier[res.campuses[i]]);
     }
     // 把初始fcampus写入，例如"011000"
-    if (fcampus && fcampus.length === area_item.category.length) {
-      console.log("fcampus exist", fcampus, area_item);
+    if (fcampus) {
       for (let i = 0; i < fcampus.length; i++) {
         const active = fcampus[i] == "1";
         area_item.category[i].all_active = active;
@@ -233,7 +224,7 @@ Page({
     filters[0].active = true;
     console.log(filters);
     this.newUserTip();
-    this.setData({
+    await this.setData({
       filters: filters,
     });
     await this.reloadCats();
@@ -300,9 +291,9 @@ Page({
     // 增加lock
     loadingLock++;
     const nowLoadingLock = loadingLock;
-    const db = await cloud.databaseAsync();
+    const db = cloud.database();
     const cat = db.collection('cat');
-    const query = await this.fGet();
+    const query = this.fGet();
     const cat_count = (await cat.where(query).count()).total;
 
     if (loadingLock != nowLoadingLock) {
@@ -340,10 +331,10 @@ Page({
 
     var cats = this.data.cats;
     var step = catsStep;
-    const db = await cloud.databaseAsync();
+    const db = cloud.database();
     const cat = db.collection('cat');
     const _ = db.command;
-    const query = await this.fGet();
+    const query = this.fGet();
     var new_cats = (await cat.where(query).orderBy('mphoto', 'desc').orderBy('popularity', 'desc').skip(cats.length).limit(step).get()).data
     new_cats = shuffle(new_cats);
 
@@ -452,7 +443,7 @@ Page({
   getHeights() {
     wx.getSystemInfo({
       success: res => {
-        // console.log(res);
+        console.log(res);
         this.setData({
           "heights.filters": res.screenHeight * 0.065,
           "heights.screenHeight": res.screenHeight,
@@ -591,8 +582,8 @@ Page({
     }
     return true;
   },
-  fGet: async function () {
-    const db = await cloud.databaseAsync();
+  fGet: function () {
+    const db = cloud.database();
     const _ = db.command;
     const filters = this.data.filters;
     var res = []; // 先把查询条件全部放进数组，最后用_.and包装，这样方便跨字段使用or逻辑
@@ -776,7 +767,7 @@ Page({
       return x === target
     });
 
-    const db = await cloud.databaseAsync();
+    const db = cloud.database();
     const cat = db.collection('cat');
     const query = {
       adopt: value
@@ -877,7 +868,7 @@ Page({
       return;
     }
     // 载入需要弹窗的公告
-    const db = await cloud.databaseAsync();
+    const db = cloud.database();
     var newsList = (await db.collection('news').orderBy('date', 'desc').where({
       setNewsModal: true
     }).get()).data

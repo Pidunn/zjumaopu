@@ -1,7 +1,10 @@
 // components/searchCat/searchCat.js
-import { getAvatar } from "../../utils/cat";
-import { regReplace } from "../../utils/utils";
-import { cloud } from "../../utils/cloudAccess";
+import { getAvatar, getCatItem } from "../../cat";
+import { regReplace, sleep } from "../../utils";
+import { cloud } from "../../cloudAccess";
+
+const db = cloud.database();
+const _ = db.command;
 
 Component({
   /**
@@ -39,8 +42,6 @@ Component({
     },
   
     async doSearchCat() {
-      const db = await cloud.databaseAsync();
-      const _ = db.command;
       if (!this.data.filters_input || this.data.jsData.loading) {
         return false;
       }

@@ -1,10 +1,10 @@
 // 审核照片
-import { checkAuth, fillUserInfo } from "../../../utils/user";
-import { requestNotice, sendVerifyNotice, getMsgTplId } from "../../../utils/msg";
-import cache from "../../../utils/cache";
-import { getCatItem } from "../../../utils/cat";
-import { cloud } from "../../../utils/cloudAccess";
-import api from "../../../utils/cloudApi";
+import { checkAuth, fillUserInfo } from "../../../user";
+import { requestNotice, sendVerifyNotice, getMsgTplId } from "../../../msg";
+import cache from "../../../cache";
+import { getCatItem } from "../../../cat";
+import { cloud } from "../../../cloudAccess";
+import api from "../../../cloudApi";
 
 // 准备发送通知的列表，姓名：审核详情
 var notice_list = {};
@@ -31,6 +31,27 @@ Page({
   },
 
   /**
+   * 生命周期函数--监听页面初次渲染完成
+   */
+  onReady: function () {
+
+  },
+
+  /**
+   * 生命周期函数--监听页面显示
+   */
+  onShow: function () {
+
+  },
+
+  /**
+   * 生命周期函数--监听页面隐藏
+   */
+  onHide: function () {
+
+  },
+
+  /**
    * 生命周期函数--监听页面卸载
    */
   onUnload: function () {
@@ -40,13 +61,33 @@ Page({
     sendVerifyNotice(notice_list);
   },
 
+  /**
+   * 页面相关事件处理函数--监听用户下拉动作
+   */
+  onPullDownRefresh: function () {
+
+  },
+
+  /**
+   * 页面上拉触底事件的处理函数
+   */
+  onReachBottom: function () {
+
+  },
+
+  /**
+   * 用户点击右上角分享
+   */
+  onShareAppMessage: function () {
+
+  },
   // 没有权限，返回上一页
   goBack() {
     wx.navigateBack();
   },
 
   async loadPhotosAndFillUserInfo(skip_i) {
-    const db = await cloud.databaseAsync();
+    const db = cloud.database();
     var res = await db.collection("photo").where({verified: false}).skip(skip_i).limit(20).get();
     await fillUserInfo(res.data, "_openid", "userInfo");
     return res;
@@ -56,7 +97,7 @@ Page({
     wx.showLoading({
       title: '加载中...',
     });
-    const db = await cloud.databaseAsync();
+    const db = cloud.database();
     // 获取所有照片
     var total_count = (await db.collection('photo').where({
       verified: false
@@ -73,21 +114,15 @@ Page({
     photos = Array.prototype.concat.apply([], photos);
 
     var campus_list = {};
-    var memory_cache = {};
     for (var photo of photos) {
-      if (memory_cache[photo.cat_id]) {
-        photo.cat = memory_cache[photo.cat_id];
-      } else {
-        photo.cat = await getCatItem(photo.cat_id);
-        memory_cache[photo.cat_id] = photo.cat;
-      }
+      photo.cat = await getCatItem(photo.cat_id);
 
       // 分类记录到campus里
       var campus = photo.cat.campus;
       if (!campus_list[campus]) {
         campus_list[campus] = [];
       }
-      // console.log("[loadAllPhotos] - ", campus, photo);
+      console.log("[loadAllPhotos] - ", campus, photo);
       campus_list[campus].push(photo);
     }
     

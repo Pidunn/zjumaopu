@@ -1,6 +1,6 @@
 // pages/tools/updateUserRole/updateUserRole.js
-import { cloud } from "../../../utils/cloudAccess";
-import api from "../../../utils/cloudApi";
+import { cloud } from "../../../cloudAccess";
+import api from "../../../cloudApi";
 
 Page({
 
@@ -61,7 +61,7 @@ Page({
   },
 
   async updateUserRole() {
-    const db = await cloud.databaseAsync();
+    const db = cloud.database();
     const _ = db.command;
     const $ = db.command.aggregate
     var totalCount = await db.collection('photo').aggregate()

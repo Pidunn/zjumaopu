@@ -4,10 +4,7 @@
     "allowJs": false,
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["functions/*"]
-    },
+    "charset": "utf8",
     "declaration": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
@@ -28,8 +25,16 @@
     "skipLibCheck": true,
     "target": "es2017",
     "alwaysStrict": true,
-    "lib": ["es2015", "es6"]
+    "lib": [
+      "es2015",
+      "es6"
+    ],
   },
-  "include": ["functions/**/*", "types/**/*"],
-  "exclude": ["tests"]
+  "include": [
+    "functions/**/*",
+    "types/**/*",
+  ],
+  "exclude": [
+    "tests",
+  ],
 }

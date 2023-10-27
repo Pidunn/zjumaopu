@@ -12,7 +12,8 @@
     <scroll-view scroll-y="1" style="height: 100%;">
       <badgeRank id="badge-rank"></badgeRank>
     </scroll-view>
-  </swiper-item><!-- 徽章收集榜 end -->
+  </swiper-item>
+  <!-- 徽章收集榜 end -->
 
   <!-- 照片点赞榜 -->
   <swiper-item>
@@ -72,7 +73,8 @@
     <scroll-view scroll-y="1" style="height: 100%;">
       <photoRank id="photo-rank"></photoRank>
     </scroll-view>
-  </swiper-item><!-- 拍照月榜 end -->
+  </swiper-item>
+  <!-- 拍照月榜 end -->
 
 </swiper>
 

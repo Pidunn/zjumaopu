@@ -10,7 +10,6 @@ import {
 import {
   cloud
 } from "../../../utils/cloudAccess";
-import { getCatCommentCount } from "../../../comment";
 import config from "../../../config";
 import api from "../../../utils/cloudApi";
 

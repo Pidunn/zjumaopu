@@ -1,11 +1,11 @@
 import {
   getPageUserInfo,
   checkAuth
-} from "../../../utils/user";
+} from "../../../user";
 import {
   cloud
-} from "../../../utils/cloudAccess";
-import api from "../../../utils/cloudApi";
+} from "../../../cloudAccess";
+import api from "../../../cloudApi";
 
 Page({
 
@@ -72,7 +72,7 @@ Page({
   
   async loadNews() {
     const that = this;
-    const db = await cloud.databaseAsync();
+    const db = cloud.database();
     const res = await db.collection('news').where({
       "_id": this.data.news_id
     }).get();

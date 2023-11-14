@@ -113,6 +113,9 @@
 
   <view class='loading' wx:if='{{!loadnomore}}'>
     <image src='/pages/public/images/system/loading.gif'></image>
+    <div class='loading-tip-container'>
+      <text class='loading-tip'>如果小程序加载遇到问题可以尝试点击右上角重新加载</text>
+    </div>
   </view>
   <view class='loadnomore' wx:else>
     <image src='/pages/public/images/system/nomore.png'></image>

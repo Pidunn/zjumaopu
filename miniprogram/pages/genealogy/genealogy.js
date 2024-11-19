@@ -4,27 +4,22 @@ import {
   getDeltaHours,
   sleep,
   getCurrentPath
-} from "../../utils";
+} from "../../utils/utils";
 import {
   getAvatar,
   getVisitedDate
-} from "../../cat";
+} from "../../utils/cat";
 import {
   getCatCommentCount
-} from "../../comment";
-import { getUserInfo } from "../../user";
-import cache from "../../cache";
+} from "../../utils/comment";
+import { getUserInfo } from "../../utils/user";
+import cache from "../../utils/cache";
 import config from "../../config";
-import { loadFilter, getGlobalSettings, showTab } from "../../page";
-import { isManagerAsync, checkCanShowNews } from "../../user";
-import { cloud } from "../../cloudAccess";
+import { loadFilter, getGlobalSettings, showTab } from "../../utils/page";
+import { isManagerAsync, checkCanShowNews } from "../../utils/user";
+import { cloud } from "../../utils/cloudAccess";
 
 const default_png = undefined;
-
-var catsStep = 1;
-var loadingLock = 0; // 用于下滑刷新加锁
-
-var pageLoadingLock = true; // 用于点击按钮刷新加锁
 
 const tipInterval = 24; // 提示间隔时间 hours
 
@@ -75,6 +70,12 @@ Page({
     text_cfg: config.text
   },
 
+  jsData: {
+    catsStep: 1,
+    loadingLock: 0,
+    pageLoadingLock: false,
+  },
+
   /**
    * 生命周期函数--监听页面加载
    */
@@ -96,7 +97,7 @@ Page({
       console.log("scene:", scene);
       if (scene.startsWith('toC=')) {
         const cat_No = scene.substr(4);
-        const db = cloud.database();
+        const db = await cloud.databaseAsync();
         var cat_res = await db.collection('cat').where({
           _no: cat_No
         }).field({
@@ -110,16 +111,42 @@ Page({
         this.clickCatCard(_id, true);
       }
     }
-    // 开始加载页面
-    const settings = await getGlobalSettings('genealogy');
+
+    // 开始加载页面，获取设置
+    var settings = null, retrySettings = 3;
+    while (retrySettings > 0) {
+      try {
+        settings = await getGlobalSettings('genealogy', {nocache: true});
+        break;
+      } catch {
+        console.error("get settings error 'genealogy'");
+        await sleep(1000);
+      }
+    }
+    
     if (!settings) {
       console.log("no setting");
+      wx.showModal({
+        title: '网络小故障',
+        content: '请重新进入小程序',
+        showCancel: false,
+        success () {
+          const pagesStack = getCurrentPages();
+          const path = getCurrentPath(pagesStack);
+          wx.restartMiniProgram({
+            path
+          });
+        }
+      })
       return
     }
     // 先把设置拿到
-    catsStep = settings['catsStep'];
+    this.jsData.catsStep = settings['catsStep'] || 1;
     // 启动加载
-    this.loadFilters(fcampus);
+    await Promise.all([
+      this.loadRecognize(),
+      this.loadFilters(fcampus),
+    ]);
 
     this.setData({
       main_lower_threshold: settings['main_lower_threshold'],
@@ -144,9 +171,24 @@ Page({
     showTab(this);
   },
 
+  loadRecognize: async function () {
+    var settings = await getGlobalSettings(__wxConfig.envVersion === 'release' ? 'recognize' : 'recognize_test');
+    this.setData({
+      showRecognize: settings.interfaceURL && !settings.interfaceURL.includes("https://your.domain.com")
+    })
+  },
+
   loadFilters: async function (fcampus) {
     // 下面开始加载filters
     var res = await loadFilter();
+    if (!res) {
+      wx.showModal({
+        title: '出错了...',
+        content: '请到关于页，清理缓存后重启试试~',
+        showCancel: false,
+      });
+      return false;
+    }
     var filters = [];
     var area_item = {
       key: 'area',
@@ -175,7 +217,8 @@ Page({
       area_item.category.push(classifier[res.campuses[i]]);
     }
     // 把初始fcampus写入，例如"011000"
-    if (fcampus) {
+    if (fcampus && fcampus.length === area_item.category.length) {
+      console.log("fcampus exist", fcampus, area_item);
       for (let i = 0; i < fcampus.length; i++) {
         const active = fcampus[i] == "1";
         area_item.category[i].all_active = active;
@@ -224,7 +267,7 @@ Page({
     filters[0].active = true;
     console.log(filters);
     this.newUserTip();
-    await this.setData({
+    this.setData({
       filters: filters,
     });
     await this.reloadCats();
@@ -281,7 +324,7 @@ Page({
       this.setData({
         loadnomore: true
       });
-      pageLoadingLock = false;
+      this.jsData.pageLoadingLock = false;
       return false;
     }
     return true;
@@ -289,14 +332,14 @@ Page({
 
   async reloadCats() {
     // 增加lock
-    loadingLock++;
-    const nowLoadingLock = loadingLock;
-    const db = cloud.database();
+    this.jsData.loadingLock++;
+    const nowLoadingLock = this.jsData.loadingLock;
+    const db = await cloud.databaseAsync();
     const cat = db.collection('cat');
-    const query = this.fGet();
+    const query = await this.fGet();
     const cat_count = (await cat.where(query).count()).total;
 
-    if (loadingLock != nowLoadingLock) {
+    if (this.jsData.loadingLock != nowLoadingLock) {
       // 说明过期了
       return false;
     }
@@ -320,7 +363,7 @@ Page({
   // 加载更多的猫猫
   async loadMoreCats() {
     // 加载lock
-    const nowLoadingLock = loadingLock;
+    const nowLoadingLock = this.jsData.loadingLock;
     if (!this.checkNeedLoad() || this.data.loading) {
       return false;
     }
@@ -330,17 +373,17 @@ Page({
     });
 
     var cats = this.data.cats;
-    var step = catsStep;
-    const db = cloud.database();
+    var step = this.jsData.catsStep;
+    const db = await cloud.databaseAsync();
     const cat = db.collection('cat');
     const _ = db.command;
-    const query = this.fGet();
+    const query = await this.fGet();
     var new_cats = (await cat.where(query).orderBy('mphoto', 'desc').orderBy('popularity', 'desc').skip(cats.length).limit(step).get()).data
     new_cats = shuffle(new_cats);
 
-    if (loadingLock != nowLoadingLock) {
+    if (this.jsData.loadingLock != nowLoadingLock) {
       // 说明过期了
-      console.log(`过期了 ${loadingLock}, ${nowLoadingLock}`)
+      console.log(`过期了 ${this.jsData.loadingLock}, ${nowLoadingLock}`)
       return false;
     }
     console.log(new_cats);
@@ -376,7 +419,7 @@ Page({
 
   async loadCatsPhoto() {
     // 加载lock
-    const nowLoadingLock = loadingLock;
+    const nowLoadingLock = this.jsData.loadingLock;
 
     const cats = this.data.cats;
 
@@ -395,7 +438,7 @@ Page({
       }
     }
 
-    if (loadingLock != nowLoadingLock) {
+    if (this.jsData.loadingLock != nowLoadingLock) {
       console.log("过期了，照片数量：" + cats.length);
       // 说明过期了
       return false;
@@ -422,6 +465,13 @@ Page({
     });
   },
 
+  // 点击识猫按钮
+  clickRecognize(e) {
+    wx.navigateTo({
+      url: '/pages/packageA/pages/recognize/recognize',
+    });
+  },
+
   // 点击猫猫卡片
   clickCatCard(e, isCatId) {
     const cat_id = isCatId ? e : e.currentTarget.dataset.cat_id;
@@ -443,7 +493,7 @@ Page({
   getHeights() {
     wx.getSystemInfo({
       success: res => {
-        console.log(res);
+        // console.log(res);
         this.setData({
           "heights.filters": res.screenHeight * 0.065,
           "heights.screenHeight": res.screenHeight,
@@ -582,8 +632,8 @@ Page({
     }
     return true;
   },
-  fGet: function () {
-    const db = cloud.database();
+  fGet: async function () {
+    const db = await cloud.databaseAsync();
     const _ = db.command;
     const filters = this.data.filters;
     var res = []; // 先把查询条件全部放进数组，最后用_.and包装，这样方便跨字段使用or逻辑
@@ -696,8 +746,8 @@ Page({
   },
   // 点击外显的校区
   fClickCampus: async function (e) {
-    if (pageLoadingLock) {
-      console.log("Page is locking");
+    if (this.jsData.pageLoadingLock) {
+      console.log("Page is locked");
       return false;
     }
     await this.fClickCategory(e, true);
@@ -767,7 +817,7 @@ Page({
       return x === target
     });
 
-    const db = cloud.database();
+    const db = await cloud.databaseAsync();
     const cat = db.collection('cat');
     const query = {
       adopt: value
@@ -780,7 +830,7 @@ Page({
 
   // 点击领养按钮
   clickAdoptBtn: async function (e) {
-    if (pageLoadingLock) {
+    if (this.jsData.pageLoadingLock) {
       console.log("[点击领养按钮] Page is locking");
       return false;
     }
@@ -851,8 +901,8 @@ Page({
 
   // 返回首页
   async clickBackFirstPageBtn() {
-    if (pageLoadingLock) {
-      console.log("[返回首页] page is locking");
+    if (this.jsData.pageLoadingLock) {
+      console.log("[返回首页] page is locked");
       return false;
     }
 
@@ -868,7 +918,7 @@ Page({
       return;
     }
     // 载入需要弹窗的公告
-    const db = cloud.database();
+    const db = await cloud.databaseAsync();
     var newsList = (await db.collection('news').orderBy('date', 'desc').where({
       setNewsModal: true
     }).get()).data
@@ -928,12 +978,12 @@ Page({
   // 上锁
   lockBtn() {
     // console.log("lock");
-    pageLoadingLock = true;
+    this.jsData.pageLoadingLock = true;
   },
   // 解锁
   unlockBtn() {
     // console.log("unlock");
-    pageLoadingLock = false;
+    this.jsData.pageLoadingLock = false;
   },
 
   // campus过滤器cache起来

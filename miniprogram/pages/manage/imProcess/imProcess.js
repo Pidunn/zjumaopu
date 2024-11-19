@@ -1,11 +1,11 @@
 // miniprogram/pages/imProcess/imProcess.js
-import { generateUUID } from "../../../utils";
+import { generateUUID } from "../../../utils/utils";
 import { text as text_cfg } from "../../../config";
-import { checkAuth, fillUserInfo } from "../../../user";
-import { cloud } from "../../../cloudAccess";
-import api from "../../../cloudApi";
+import { checkAuth, fillUserInfo } from "../../../utils/user";
+import { cloud } from "../../../utils/cloudAccess";
+import api from "../../../utils/cloudApi";
 
-import drawUtils from "./draw";
+import drawUtils from "../../../utils/draw";
 import lockUtils from "./lock";
 
 const canvasMax = 1200; // 正方形画布的尺寸px
@@ -33,7 +33,10 @@ Page({
     images_path: {},
     now: 0, // 当前状态
     processing: false,
+    errMsg: "",
   },
+
+  jsData: {},
 
   /**
    * 生命周期函数--监听页面加载
@@ -51,7 +54,6 @@ Page({
       gLockKey: await lockUtils.geneKey("device"),
     });
     await this.getLock();
-    // this.tipAutoProcess();
   },
 
   async getLock() {
@@ -84,27 +86,6 @@ Page({
     });
   },
 
-  // 提示不要手动处理，在laf上不调用
-  tipAutoProcess: async function () {
-    wx.showModal({
-      title: '提示',
-      content: '目前后台已实现自动处理图片，在该功能正常的情况下管理员无需再手动处理图片。',
-      showCancel: true,
-      cancelText: '坚持处理',
-      cancelColor: '#cd0000',
-      confirmText: '离开',
-      confirmColor: '#32cd32',
-    });
-    
-    if (res.cancel && (await checkAuth(this, 3))) {
-      await this.loadProcess();
-    } else {
-      wx.navigateBack({
-        delta: 1
-      });
-    }
-  },
-
   onShow: function () {
     console.log('设置屏幕常亮');
     wx.setKeepScreenOn({
@@ -129,7 +110,7 @@ Page({
   },
 
   async loadProcess() {
-    const db = cloud.database();
+    const db = await cloud.databaseAsync();
     const _ = db.command;
     const total = (await db.collection('photo').where({
       photo_compressed: _.in([undefined, '']),
@@ -140,6 +121,7 @@ Page({
     this.setData({
       total: total,
       now: 0,
+      processing: false,
     });
   },
 
@@ -148,14 +130,34 @@ Page({
     wx.navigateBack();
   },
 
-  clickProcessBtn: async function () {
+  clickProcessBtn: async function (e) {
+    const {test} = e.currentTarget.dataset;
     this.data.processing = !this.data.processing;
     this.setData({
       processing: this.data.processing
     });
     // 开始处理
     if (this.data.processing) {
-      await this.beginProcess();
+      try {
+        this.setData({
+          errMsg: "",
+        })
+        await this.beginProcess(test);  
+      } catch (error) {
+        console.error(error);
+        await wx.showModal({
+          title: '出错了',
+          content: error.toString(),
+          showCancel: false
+        });
+        this.setData({
+          errMsg: JSON.stringify(error.message) || "-",
+          errStack: error.stack?.toString() || "-",
+        });
+        await this.loadProcess();
+        wx.hideLoading();
+      }
+
       return;
     }
     // 停止处理，考虑放个mask
@@ -165,8 +167,8 @@ Page({
     });
   },
 
-  beginProcess: async function () {
-    const db = cloud.database();
+  beginProcess: async function (isTesting) {
+    const db = await cloud.databaseAsync();
     const _ = db.command;
     while (this.data.processing && (await this.getLock())) {
       var photos = (await db.collection('photo').where({
@@ -187,8 +189,10 @@ Page({
       }
       // 开始处理一张图
       // 强行重置一下canvas
-      await drawUtils.initCanvas();
-      await this.processOne(photos[0]);
+      const initCanvas = await drawUtils.initCanvas('#bigPhoto');
+      this.jsData.gCtx = initCanvas.ctx;
+      this.jsData.gCanvas = initCanvas.canvas;
+      await this.processOne(photos[0], isTesting);
       this.setData({
         now: this.data.now + 1
       });
@@ -204,16 +208,27 @@ Page({
   },
 
   // 处理一张图片
-  processOne: async function (photoInfo) {
+  processOne: async function (photoInfo, isTesting) {
     photoInfo.mdate = new Date(photoInfo.mdate).toJSON();
     // 获取原图
     this.setPhase(1);
     if (photoInfo.userInfo === undefined) {
       photoInfo.userInfo = { nickName: '猫友' }
     }
-    var photoObj = await wx.getImageInfo({
-      src: photoInfo.photo_id,
-    });
+    try {
+      var photoObj = await wx.getImageInfo({
+        src: photoInfo.photo_id,
+      });
+    } catch (error) {
+      console.error(error);
+      const err = new Error(`error: ${JSON.stringify(error)}, photoInfo: ${JSON.stringify(photoInfo)}`);
+      err.name = "下载图片失败";
+      throw err;
+    }
+    // 处理旋转问题
+    if (photoObj.orientation == 'right' || photoObj.orientation == 'left') {
+      [photoObj.width, photoObj.height] = [photoObj.height, photoObj.width];
+    }
     console.log("imProcess processOne:", photoObj);
     this.setData({
       origin: photoObj
@@ -226,6 +241,16 @@ Page({
     this.setPhase(3);
     const watermarkPath = await this.watermark(photoObj, photoInfo);
     console.log("watermarkPath", watermarkPath);
+    // 是否只是测试运行
+    if (isTesting) {
+      await wx.showModal({
+        title: '试运行完成',
+        content: '请点击缩略图和水印图，查看是否正常',
+        showCancel: false,
+      })
+      await this.loadProcess();
+      return;
+    }
     // 上传压缩图
     this.setPhase(4);
     const compressCloudPath = `compressed/${generateUUID()}.jpg`;
@@ -248,25 +273,29 @@ Page({
     const origin = oriPhotoObj;
 
     const draw_rate = Math.max(origin.width, origin.height) / canvasMax;
-    const draw_width = origin.width / draw_rate;
-    const draw_height = origin.height / draw_rate;
+    console.log(origin, draw_rate);
+    const draw_width = Math.floor(origin.width / draw_rate);
+    const draw_height = Math.floor(origin.height / draw_rate);
     console.log("draw size", draw_width, draw_height);
 
     // 画上图片
-    await drawUtils.drawImage(origin.path, 0, 0, draw_width, draw_height);
+    const { gCtx, gCanvas } = this.jsData;
+    await drawUtils.drawImage(gCtx, gCanvas, origin.path, 0, 0, draw_width, draw_height);
 
     // 压缩后的大小
     var comp_width, comp_height;
     if (origin.width > origin.height) {
       comp_width = compressLength;
-      comp_height = origin.height / origin.width * compressLength;
+      comp_height = Math.floor(origin.height / origin.width * compressLength);
     } else {
       comp_height = compressLength;
-      comp_width = origin.width / origin.height * compressLength;
+      comp_width = Math.floor(origin.width / origin.height * compressLength);
     }
 
+    console.log("comp size", comp_width, comp_height);
+
     // 变成图片显示
-    var path = await drawUtils.getTempPath({
+    var path = await drawUtils.getTempPath(gCtx, gCanvas, {
       width: draw_width,
       height: draw_height,
       destWidth: comp_width,
@@ -290,8 +319,9 @@ Page({
     const draw_height = origin.height / draw_rate;
 
     // 写上水印
+    const { gCtx, gCanvas } = this.jsData;
     const text = `${text_cfg.app_name}@${photoInfo.photographer || photoInfo.userInfo.nickName}`
-    await drawUtils.writeWatermake({
+    await drawUtils.writeWatermake(gCtx, gCanvas, {
       fontSize: draw_height * 0.03,
       fillStyle: "white",
       text: text,
@@ -300,7 +330,7 @@ Page({
     });
 
     // 变成图片显示
-    var path = await drawUtils.getTempPath({
+    var path = await drawUtils.getTempPath(gCtx, gCanvas, {
       width: draw_width,
       height: draw_height,
       destWidth: origin.width,
@@ -341,6 +371,13 @@ Page({
     }
     wx.previewImage({
       urls: [src],
+    });
+  },
+
+  copyText: function (e) {
+    const {text} = e.currentTarget.dataset;
+    wx.setClipboardData({
+      data: text,
     });
   }
 })

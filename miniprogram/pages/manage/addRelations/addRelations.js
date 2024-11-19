@@ -1,16 +1,10 @@
 // 审核照片
-import { regReplace, sleep } from "../../../utils";
-import { getAvatar, getCatItem } from "../../../cat";
-import { checkAuth } from "../../../user";
-import { cloud } from "../../../cloudAccess";
-import api from "../../../cloudApi";
+import { regReplace, sleep } from "../../../utils/utils";
+import { getAvatar, getCatItem } from "../../../utils/cat";
+import { checkAuth } from "../../../utils/user";
+import { cloud } from "../../../utils/cloudAccess";
+import api from "../../../utils/cloudApi";
 
-const db = cloud.database();
-const _ = db.command;
-
-// 运行状态
-var selectRelationTypeIdx = undefined;
-var selectRelationCatIdx = undefined;
 
 Page({
 
@@ -27,10 +21,17 @@ Page({
     showSearchType: false,
   },
 
+  jsData: {
+    // 运行状态
+    selectRelationTypeIdx: null,
+    selectRelationCatIdx: null,
+  },
+
   /**
    * 生命周期函数--监听页面加载
    */
   async onLoad(options) {
+    const db = await cloud.databaseAsync();
     if (await checkAuth(this, 2)) {
       this.loadRelationTypes();
     }
@@ -92,6 +93,7 @@ Page({
 
   // 加载setting里的relation types
   async loadRelationTypes() {
+    const db = await cloud.databaseAsync();
     var types = [];
     var data = (await db.collection('setting').where({_id: 'relation'}).get()).data;
 
@@ -151,10 +153,13 @@ Page({
     var type =  this.data.relation_types[idx];
     // console.log(type);
     this.setData({
-      [`cat.relations[${selectRelationTypeIdx}].type`]: type,
+      [`cat.relations[${this.jsData.selectRelationTypeIdx}].type`]: type,
       showSearchCat: false,
       showSearchType: false,
     });
+  },
+  hideSearch() {
+    this.triggerEvent('close');
   },
 
   async deleteRelationType(e) {
@@ -175,7 +180,7 @@ Page({
     types.splice(idx, 1);
     await api.curdOp({
       operation: "update",
-      collection: "setting",
+      document: "setting",
       item_id: "relation",
       data: {
         types: types
@@ -195,11 +200,11 @@ Page({
     var that = this;
     var fCat, fType;
     if (type == "cat") {
-      selectRelationCatIdx = e ? e.currentTarget.dataset.index: undefined;
+      this.jsData.selectRelationCatIdx = e ? e.currentTarget.dataset.index: undefined;
       fCat = true;
       fType = false;
     } else if (type == "relation") {
-      selectRelationTypeIdx = e ? e.currentTarget.dataset.index: undefined;
+      this.jsData.selectRelationTypeIdx = e ? e.currentTarget.dataset.index: undefined;
       fCat = false;
       fType = true;
     } else if (type == "hide") {
@@ -226,6 +231,8 @@ Page({
   },
 
   async doSearchCat() {
+    const db = await cloud.databaseAsync();
+    const _ = db.command;
     if (!this.data.filters_input) {
       return false;
     }
@@ -266,7 +273,7 @@ Page({
   async searchSelectCat(e) {
     var idx = e.currentTarget.dataset.index;
     var cat = this.data.searchCats[idx];
-    if (selectRelationCatIdx === undefined) {
+    if (this.jsData.selectRelationCatIdx === undefined) {
       this.data.cat = cat;
       this.setData({
         cat: cat,
@@ -277,8 +284,8 @@ Page({
     }
 
     this.setData({
-      [`cat.relations[${selectRelationCatIdx}].cat_id`]: cat._id,
-      [`cat.relations[${selectRelationCatIdx}].cat`]: cat,
+      [`cat.relations[${this.jsData.selectRelationCatIdx}].cat_id`]: cat._id,
+      [`cat.relations[${this.jsData.selectRelationCatIdx}].cat`]: cat,
       showSearchCat: false,
       showSearchType: false,
     });

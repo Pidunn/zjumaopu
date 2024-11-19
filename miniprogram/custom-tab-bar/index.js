@@ -1,5 +1,6 @@
-import { getGlobalSettings, getCurrentPath, toSettings } from "../page";
-import { checkCanFullTabBar } from "../user";
+import { getGlobalSettings, getCurrentPath } from "../utils/page";
+import { sleep } from "../utils/utils";
+import { checkCanFullTabBar } from "../utils/user";
 import tab from "./tab";
 
 function getTabBarList() {
@@ -27,14 +28,20 @@ Component({
   },
   async created() {
     const currentPath = getCurrentPath();
-    const settings = await getGlobalSettings("tabBarCtrl");
+    if (!currentPath) {
+      await sleep(100);
+    }
+    const settings = await this.getSettings();
     if (settings == undefined) {
       console.log("no settings, currentPath:", currentPath);
       if (isTabPath(currentPath)) {
-        toSettings("缺失tabBar设置，已填入默认值，请检查后保存。");
+        wx.showModal({
+          title: 'TabBar错误001',
+          content: `请重进小程序。当前页面：${currentPath}`,
+          showCancel: false
+        });
         return;
       }
-
       
       this.setData({
         list: tab,
@@ -48,13 +55,17 @@ Component({
     // console.log("tabBar", ctrlTab, minTab, fullTab);
     // 根据用户类型来确定底Tab
     var order = minTab;
-    if (await checkCanFullTabBar()) {
+    if (await checkCanFullTabBar() || !order) {
       order = fullTab;
     }
 
     if (!order && isTabPath(currentPath)) {
       console.log("no order");
-      toSettings("缺失tabBar设置，已填入默认值，请检查后保存。");
+      wx.showModal({
+        title: 'TabBar错误002',
+        content: `请重进小程序。当前页面：${currentPath}`,
+        showCancel: false
+      });
       return;
     }
 
@@ -91,6 +102,18 @@ Component({
 
       const url = `/${path}`;
       wx.switchTab({url});
+    },
+    
+    // 带有重试机制的读取设置
+    async getSettings() {
+      let maxTry = 3;
+      let res = undefined;
+      while (res === undefined && maxTry > 0) {
+        res = await getGlobalSettings("tabBarCtrl", {nocache: true});
+        maxTry --;
+        await sleep(300);
+      }
+      return res;
     },
   }
 })

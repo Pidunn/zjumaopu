@@ -1,13 +1,12 @@
 // 审核照片
-import { checkAuth, fillUserInfo } from "../../../user";
-import { requestNotice, sendVerifyNotice, getMsgTplId } from "../../../msg";
-import cache from "../../../cache";
-import { getCatItem } from "../../../cat";
-import { cloud } from "../../../cloudAccess";
-import api from "../../../cloudApi";
+import { checkAuth, fillUserInfo } from "../../../utils/user";
+import { sleep } from "../../../utils/utils";
+import { requestNotice, sendVerifyNotice, getMsgTplId } from "../../../utils/msg";
+import cache from "../../../utils/cache";
+import { getCatItem } from "../../../utils/cat";
+import { cloud } from "../../../utils/cloudAccess";
+import api from "../../../utils/cloudApi";
 
-// 准备发送通知的列表，姓名：审核详情
-var notice_list = {};
 
 Page({
 
@@ -20,35 +19,20 @@ Page({
     campus_list: [],
   },
 
+  jsData: {
+    // 准备发送通知的列表，姓名：审核详情
+    notice_list: {},
+  },
+
   /**
    * 生命周期函数--监听页面加载
    */
   onLoad: async function (options) {
-    notice_list = {};
+    this.jsData.notice_list = {};
+
     if (await checkAuth(this, 1)) {
       this.loadAllPhotos();
     }
-  },
-
-  /**
-   * 生命周期函数--监听页面初次渲染完成
-   */
-  onReady: function () {
-
-  },
-
-  /**
-   * 生命周期函数--监听页面显示
-   */
-  onShow: function () {
-
-  },
-
-  /**
-   * 生命周期函数--监听页面隐藏
-   */
-  onHide: function () {
-
   },
 
   /**
@@ -58,36 +42,16 @@ Page({
     console.log('[onUnload] - 页面退出');
 
     // 发送审核消息
-    sendVerifyNotice(notice_list);
+    sendVerifyNotice(this.jsData.notice_list);
   },
 
-  /**
-   * 页面相关事件处理函数--监听用户下拉动作
-   */
-  onPullDownRefresh: function () {
-
-  },
-
-  /**
-   * 页面上拉触底事件的处理函数
-   */
-  onReachBottom: function () {
-
-  },
-
-  /**
-   * 用户点击右上角分享
-   */
-  onShareAppMessage: function () {
-
-  },
   // 没有权限，返回上一页
   goBack() {
     wx.navigateBack();
   },
 
   async loadPhotosAndFillUserInfo(skip_i) {
-    const db = cloud.database();
+    const db = await cloud.databaseAsync();
     var res = await db.collection("photo").where({verified: false}).skip(skip_i).limit(20).get();
     await fillUserInfo(res.data, "_openid", "userInfo");
     return res;
@@ -97,7 +61,7 @@ Page({
     wx.showLoading({
       title: '加载中...',
     });
-    const db = cloud.database();
+    const db = await cloud.databaseAsync();
     // 获取所有照片
     var total_count = (await db.collection('photo').where({
       verified: false
@@ -109,20 +73,27 @@ Page({
     }
 
     var photos = await Promise.all(pools);
+    
     // 拼接多个array
     photos = photos.map(x => x.data);
     photos = Array.prototype.concat.apply([], photos);
 
     var campus_list = {};
+    var memory_cache = {};
     for (var photo of photos) {
-      photo.cat = await getCatItem(photo.cat_id);
+      if (memory_cache[photo.cat_id]) {
+        photo.cat = memory_cache[photo.cat_id];
+      } else {
+        photo.cat = await getCatItem(photo.cat_id);
+        memory_cache[photo.cat_id] = photo.cat;
+      }
 
       // 分类记录到campus里
       var campus = photo.cat.campus;
       if (!campus_list[campus]) {
         campus_list[campus] = [];
       }
-      console.log("[loadAllPhotos] - ", campus, photo);
+      // console.log("[loadAllPhotos] - ", campus, photo);
       campus_list[campus].push(photo);
     }
     
@@ -137,7 +108,7 @@ Page({
       active_campus: cache_active_campus,
     })
     
-    wx.hideLoading();
+    await wx.hideLoading();
   },
 
   bindClickCampus(e) {
@@ -186,16 +157,16 @@ Page({
   // 添加一条通知记录，等页面退出的时候统一发送通知
   addNotice(photo, accepted) {
     const openid = photo._openid;
-    if (!notice_list[openid]) {
-      notice_list[openid] = {
+    if (!this.jsData.notice_list[openid]) {
+      this.jsData.notice_list[openid] = {
         accepted: 0,
         deleted: 0,
       }
     }
     if (accepted) {
-      notice_list[openid].accepted++;
+      this.jsData.notice_list[openid].accepted++;
     } else {
-      notice_list[openid].deleted++;
+      this.jsData.notice_list[openid].deleted++;
     }
   },
 

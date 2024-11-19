@@ -1,9 +1,9 @@
-import { getCurrentPath, shareTo } from "../../../utils";
-import { getPageUserInfo, checkCanFeedback, toSetUserInfo } from "../../../user";
-import { requestNotice, sendNotifyChkFeeedback } from "../../../msg";
+import { getCurrentPath, shareTo } from "../../../utils/utils";
+import { getPageUserInfo, checkCanFeedback } from "../../../utils/user";
+import { requestNotice, sendNotifyChkFeeedback } from "../../../utils/msg";
 import { text as text_cfg } from "../../../config";
-import { cloud } from "../../../cloudAccess";
-import api from "../../../cloudApi";
+import { cloud } from "../../../utils/cloudAccess";
+import api from "../../../utils/cloudApi";
 
 Page({
   /**
@@ -22,7 +22,7 @@ Page({
    * 生命周期函数--监听页面加载
    */
   onLoad: async function (options) {
-    const db = cloud.database();
+    const db = await cloud.databaseAsync();
     if (options.cat_id != undefined) {
       const catRes = await db.collection('cat').doc(options.cat_id).field({ name: true, _id: true }).get();
       this.setData({
@@ -51,8 +51,15 @@ Page({
     return shareTo(share_text, path);
   },
 
-  getUInfo() {
-    toSetUserInfo()
+  getUInfo: function() {
+    this.setData({
+    showEdit: true
+    });
+  },
+  closeEdit: function() {
+    this.setData({
+    showEdit: false
+    });
   },
 
   bindInput(e) {

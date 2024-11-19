@@ -85,31 +85,30 @@ swiper-item image {
   width: 34rpx;
 }
 
-.info .popularity {
-  margin-left: auto;
+.info .count {
+  margin-left: 5rpx;
   order: 2;
-  display: inline;
+  display: inline-flex;
+  align-items: center;
   font-size: 22rpx;
   letter-spacing: 1rpx;
   color: var(--color-black-light);
 }
-.popularity image {
+.count image {
   height: 20rpx;
   width: 35rpx;
+  margin: 0 3rpx 0 5rpx;
 }
 
-.info .comment {
-  margin-left: 10rpx;
-  order: 2;
-  display: inline;
-  font-size: 22rpx;
-  letter-spacing: 1rpx;
-  color: var(--color-black-light);
-}
 .comment image {
   height: 27rpx;
   width: 27rpx;
 }
+
+.info .count.first {
+  margin-left: auto;
+}
+
 
 .tags {
   display: flex;
@@ -123,25 +122,26 @@ swiper-item image {
   box-sizing: border-box;
   border-radius: 20rpx;
   background-color: var(--color-primary);
+  color: var(--color-white);
   padding: 6rpx 15rpx 8rpx 15rpx;
   margin-right: 20rpx;
 }
 
 
 .tags .to_star {
-  background-color: var(--color-gray-light);
+  background-color: var(--color-gray-max);
 }
 
 .tags .mpcode {
   height: 40rpx;
-  margin-left: 20rpx;
+  margin-left: auto;
 }
 .mpcode image {
   height: 40rpx;
   width: 40rpx;
 }
 
-.fb-button {
+.fb-button, .badge-all {
   font-size: 20rpx;
   font-weight: 500;
   height: 40rpx;
@@ -152,7 +152,11 @@ swiper-item image {
   color: var(--color-black-light);
   /* background-color: var(--color-primary); */
   border: 3rpx solid var(--color-primary);
-  border-radius: 5rpx;
+  border-radius: 20rpx;
+}
+
+.badge-all + .badge-all {
+  margin-right: 20rpx;
 }
 
 .details {
@@ -174,6 +178,9 @@ swiper-item image {
   height: 20rpx;
   background-color: var(--color-primary);
   display: inline-block;
+}
+.details .small {
+  font-size: 16rpx;
 }
 
 .details .item .label {
@@ -303,25 +310,64 @@ swiper-item image {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-.addPhoto {
+/*弹出层*/
+.plus {
   width: 100rpx;
   height: 100rpx;
-  border-radius: 100rpx;
   position: fixed;
-  bottom: 50rpx;
+  bottom: 150rpx;
   right: 50rpx;
-  background-color: var(--color-primary);
-  box-shadow: 5rpx 7rpx 20rpx var(--color-gray-dark);
-  display: flex;
+  filter: drop-shadow(0px 12rpx 12rpx rgba(0, 0, 0, 0.15));
+  display: block;
   justify-content: center;
   align-items: center;
-  z-index: 999;
+  z-index: 1;
 }
-
-.addPhoto .icon{
-  width: 60%;
-  height: 60%;
-  margin-left: 5%;
+.plus .icon{
+  width: 100%;
+  height: 100%;
+}
+.withdrawbtn{
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+.withdraw{
+  width: 72rpx;
+  height: 19.5rpx;
+  margin-top: 30rpx;
+  margin-bottom: 30rpx;
+}
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  box-sizing: border-box;
+  padding: 10rpx;
+}
+.button {
+  filter: drop-shadow(0px 12rpx 12rpx rgba(0, 0, 0, 0.15));
+  margin-bottom: 50rpx;
+  width: 33.33%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.button .icon{
+  width: 100rpx;
+  height: 100rpx;
+}
+.button .icon.gray{
+  filter: grayscale(100);
+}
+.button-text {
+  width: 100%;
+  font-size: 25rpx;
+  text-align: center;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
 /* 下面开始悬浮标题 */
@@ -338,7 +384,7 @@ swiper-item image {
   position: sticky;
   top: 0;
   position: -webkit-sticky;
-  z-index: 99;
+  z-index: 1;
 }
 
 .big-header .avatar {
@@ -369,38 +415,6 @@ swiper-item image {
   color: var(--color-black-min);
   font-weight: 400;
   margin-bottom: 30rpx;
-}
-
-#comment-btn {
-  width: 60rpx;
-  height: 160rpx;
-  position: absolute;
-  right: 0;
-  top: 60%;
-
-  background-color: var(--color-primary);
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-
-  border-top-left-radius: 10rpx;
-  border-bottom-left-radius: 10rpx;
-
-  padding-top: 9rpx;
-}
-
-#comment-btn text {
-  font-size: 26rpx;
-  writing-mode: vertical-rl;
-  display: block;
-}
-
-#comment-btn image {
-  width: 22rpx;
-  height: 24rpx;
-  margin-top: 12rpx;
 }
 
 .best-photo {
@@ -440,11 +454,11 @@ swiper-item image {
 }
 
 /* 猫猫关系 */
-.relations {
+.relations, .badge-list {
   width: 100%;
   white-space: nowrap;
 }
-.relation-block {
+.relation-block, .badge-item {
   width: 150rpx;
   display: inline-flex;
   flex-direction: column;
@@ -452,7 +466,7 @@ swiper-item image {
   padding: 10rpx 0;
   border-radius: 20rpx;
 }
-.relation-block.tap {
+.relation-block.tap, .badge-item.tap {
   background-color: var(--color-gray-light);
 }
 .relation-cat-avatar {
@@ -461,7 +475,7 @@ swiper-item image {
   border-radius: 100%;
   background-color: var(--color-white-dark);
 }
-.relation-name {
+.relation-name, .badge-item-count, .user-badge-item-count {
   max-width: 100rpx;
   margin-top: -20rpx;
   font-size: 20rpx;
@@ -472,14 +486,13 @@ swiper-item image {
   text-overflow:ellipsis;
   overflow:hidden;
 }
-.relation-cat-name {
+.relation-cat-name, .badge-item-name {
   max-width: 150rpx;
   font-size: 28rpx;
   color: var(--color-primary);
   white-space: nowrap;
   text-overflow:ellipsis;
   overflow:hidden;
-
 }
 
 /* 关掉关系板块滚动条，安卓滚动条略丑 */
@@ -488,5 +501,227 @@ swiper-item image {
   width: 0;
   height: 0;
   color: transparent;
+}
 
+/* 徽章 */
+.badge-all {
+  float: right;
+}
+
+/* 赠予徽章 */
+.search {
+  width: 750rpx;
+  background-color: var(--color-white-dark);
+  position: fixed;
+  bottom: 0;
+  padding: 20rpx 20rpx;
+  padding-bottom: max(20rpx, constant(safe-area-inset-bottom));
+  padding-bottom: max(20rpx, env(safe-area-inset-bottom));
+  display: block;
+
+  /* border-top: 5rpx solid var(--color-primary); */
+  border-top-left-radius: 50rpx;
+  border-top-right-radius: 50rpx;
+
+  overflow: hidden;
+  box-sizing: border-box;
+  transition: height 400ms ease, bottom 400ms ease;
+
+  z-index: 999;
+
+  background-color: var(--color-gray-light);
+
+  filter: drop-shadow(0px 12rpx 12rpx rgba(0, 0, 0, 0.15));
+}
+
+.search.hidden {
+  bottom: -1000rpx;
+}
+
+.user-badge-list {
+  display: flex;
+  height: 380rpx;
+  flex-wrap: wrap;
+}
+
+.user-badge-item {
+  width: 20%;
+  padding: 10rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 4rpx solid transparent;
+  border-radius: 20rpx;
+  margin: 6rpx 2.5%;
+  box-sizing: border-box;
+  height: 180rpx;
+}
+
+.user-badge-item.active {
+  border: 4rpx solid var(--color-primary);
+}
+
+.user-badge-item.zero-count {
+  filter: grayscale(0.9);
+}
+
+.user-badge-item-avatar {
+  width: 120rpx;
+  height: 120rpx;
+}
+
+.user-badge-item-name {
+  font-size: 20rpx;
+}
+
+.badge-level-A.active .user-badge-item-avatar {
+  filter: drop-shadow(0rpx 0rpx 7rpx var(--color-badge-A));
+  transform: translateZ(0);
+}
+
+.badge-level-B.active .user-badge-item-avatar {
+  filter: drop-shadow(0rpx 0rpx 7rpx var(--color-badge-B));
+  transform: translateZ(0);
+}
+
+.badge-level-C.active .user-badge-item-avatar {
+  filter: drop-shadow(0rpx 0rpx 7rpx var(--color-badge-C));
+  transform: translateZ(0);
+}
+
+.badge-level-A .user-badge-item-name {
+  color: var(--color-badge-A);
+}
+
+.badge-level-B .user-badge-item-name {
+  color: var(--color-badge-B);
+}
+
+.badge-level-C .user-badge-item-name {
+  color: var(--color-badge-C);
+}
+
+/* search按钮 */
+.search-buttons {
+  display: flex;
+  justify-content: space-evenly;
+  margin-top: 20rpx;
+}
+
+.search-btn {
+  width: 300rpx;
+  height: 42rpx;
+  line-height: 42rpx;
+  font-size: 22rpx;
+  text-align: center;
+  background-color: white;
+  border-radius: 10rpx;
+  border: 1rpx solid var(--color-gray-normal);
+}
+.search-btn.active {
+  background-color: var(--color-primary);
+  color: var(--color-white)
+}
+.search-btn.active.hover {
+  background-color: var(--color-primary-dark);
+}
+.search-btn.disabled {
+  background-color: var(--color-gray-dark);
+}
+
+/* 徽章 */
+.badge-item-name {
+  font-size: 20rpx;
+}
+
+.badge-item-avatar {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 100%;
+}
+
+/* .badge-level-A .badge-item-avatar {
+  filter: drop-shadow(0rpx 0rpx 7rpx var(--color-badge-A));
+}
+
+.badge-level-B .badge-item-avatar {
+  filter: drop-shadow(0rpx 0rpx 7rpx var(--color-badge-B));
+}
+
+.badge-level-C .badge-item-avatar {
+  filter: drop-shadow(0rpx 0rpx 7rpx var(--color-badge-C));
+} */
+
+.badge-level-A .badge-item-name {
+  color: var(--color-badge-A);
+}
+
+.badge-level-B .badge-item-name {
+  color: var(--color-badge-B);
+}
+
+.badge-level-C .badge-item-name {
+  color: var(--color-badge-C);
+}
+
+.badge-item-count, .user-badge-item-count {
+  font-size: 18rpx;
+  background-color: var(--color-gray-light);
+  opacity: 0.7;
+  padding: 3rpx 6rpx;
+}
+
+.badge-item-count.hidden {
+  opacity: 0.0;
+}
+
+
+/* 猫猫评分 */
+
+.one-rating {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.one-rating.detail {
+  border-bottom: 1rpx solid var(--color-gray-light);
+}
+
+.one-rating .title, one-rating-title {
+  font-size: 24rpx;
+  text-align: right;
+}
+
+.stars {
+  width: 370rpx;
+  height: 60rpx;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.one-star {
+  width: 50rpx;
+  height: 50rpx;
+}
+
+.one-star.gray {
+  filter: grayscale(100%);
+  opacity: 0.3;
+}
+
+.one-star image {
+  width: 100%;
+  height: 100%;
+}
+
+.score {
+  margin-left: 20rpx;
+  width: 50rpx;
+  text-align: center;
+  color: var(--color-primary);
+  font-weight: bold;
 }

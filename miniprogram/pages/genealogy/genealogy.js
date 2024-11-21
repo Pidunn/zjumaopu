@@ -241,16 +241,31 @@ Page({
     }
     filters.push(colour_item);
 
-    var adopt_status = [{
-      name: "未知",
-      value: null
-    }];
-    adopt_status = adopt_status.concat(config.cat_status_adopt.map((name, i) => {
+    var sterilized_status = config.cat_status_sterilized.map((name, i) => {
+      return {
+        name: name,
+        value: (i === 0), // 数据库里存的
+      };
+    });
+
+    var sterilized_item = {
+      key: 'sterilized',
+      name: '绝育',
+      category: [{
+        name: '全部状态',
+        items: sterilized_status,
+        all_active: true
+      }]
+    }
+    filters.push(sterilized_item);
+
+
+    var adopt_status = config.cat_status_adopt.map((name, i) => {
       return {
         name: name,
         value: i, // 数据库里存的
       };
-    }));
+    });
 
     var adopt_item = {
       key: 'adopt',

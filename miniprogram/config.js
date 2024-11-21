@@ -38,6 +38,8 @@ module.exports = {
 
   // 猫猫领养状态字符串，对应数据库cat.adopt中的数字下标
   cat_status_adopt: ["未领养", "已领养", "寻找领养中"],
+  // 猫咪是否绝育
+  cat_status_sterilized: ["已绝育", "未绝育"],
   // 首页漂浮的领养Logo对应的状态
   cat_status_adopt_target: "寻找领养中",
 

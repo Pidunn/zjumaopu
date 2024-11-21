@@ -143,7 +143,7 @@ module.exports = {
     // 开发团队页，pages/info/devTeam/devTeam
     dev_team: {
       share_tip: "开发团队",
-      team: "程序开发：渔政（中大）、蓝卷（中大）、XD（中大）、zJ（中大）、ArcherJo（中大）、yw（中大）、大力出奇迹、W.H\n资料整理：余华小狗、我有一只小毛驴、小青\n以及各校区猫群的小伙伴~\n非常欢迎新朋友加入设计开发哇~！",
+      team: "程序开发：渔政（中大）、蓝卷（中大）、XD（中大）、zJ（中大）、ArcherJo（中大）、yw（中大）、大力出奇迹、W.H、Diode\n资料整理：余华小狗、我有一只小毛驴、小青\n以及各校区猫群的小伙伴~\n非常欢迎新朋友加入设计开发哇~！",
     },
     // 识猫页，pages/recognize/recognize
     recognize: {

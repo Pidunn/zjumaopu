@@ -10,6 +10,11 @@ Page({
     text_cfg: text_cfg,
     github_link: "https://github.com/sysucats/zhongdamaopu",
     update_log: [{
+      version: "v1.14.5",
+      content: [
+        "新增根据绝育标签筛选功能",
+        "修复已知bug"
+      ],
       version: "v1.14.4",
       content: [
         "修复版本控制功能"

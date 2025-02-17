@@ -37,7 +37,7 @@ Page({
     text_cfg: config.text,
     is_manager: false,
     is_owner: false,
-
+    showEdit: false,
     paper_colors: ['white', 'yellow', 'green', 'pink'],
     paper_color_select: 0,
   },
@@ -187,8 +187,19 @@ Page({
     });
   },
   closeEdit: function() {
+    if (this.data.user) {
+      this.setData({
+        showEdit: false,
+      });
+    }
+  },
+  // 保存后触发更新 toDo 昵称更新了，头像403
+  onUserInfoUpdated(event) {
+    const { user } = event.detail;
+    this.setData({ user });
+
     this.setData({
-    showEdit: false
+      isAuth: true,
     });
   },
 

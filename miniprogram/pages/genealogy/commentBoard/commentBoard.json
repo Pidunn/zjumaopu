@@ -1,5 +1,6 @@
 {
   "usingComponents": {
+    "modifyUserInfo": "/components/modifyUserInfo/modifyUserInfo",
     "heart": "/packages/heart-button/heart"
   }
 }

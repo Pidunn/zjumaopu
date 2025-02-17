@@ -69,6 +69,7 @@ Page({
   
   // 编辑个人信息弹窗
   editProfile: function() {
+    console.log("show")
     if (!this.data.user) {
       this.setData({
         showEdit: true,

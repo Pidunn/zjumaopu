@@ -15,7 +15,8 @@ Page({
     feedbackLength: 0,
     maxlength: 300,
     cat: undefined,
-    text_cfg: text_cfg
+    text_cfg: text_cfg,
+    showEdit: false
   },
 
   /**
@@ -56,11 +57,23 @@ Page({
     showEdit: true
     });
   },
-  closeEdit: function() {
-    this.setData({
-    showEdit: false
-    });
-  },
+
+    closeEdit: function() {
+      if (this.data.user) {
+        this.setData({
+          showEdit: false,
+        });
+      }
+    },
+    // 保存后触发更新 toDo 昵称更新了，头像403
+    onUserInfoUpdated(event) {
+      const { user } = event.detail;
+      this.setData({ user });
+
+      this.setData({
+        isAuth: true,
+      });
+    },
 
   bindInput(e) {
     var inputData = e.detail.value;

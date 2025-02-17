@@ -42,3 +42,4 @@
 <view class='footnote'>
   <text>{{text_cfg.feedback_detail.submit_tip}}</text>
 </view>
+<modifyUserInfo bind:userInfoUpdated="onUserInfoUpdated" show="{{showEdit}}" bind:close="closeEdit"></modifyUserInfo>

@@ -71,3 +71,5 @@
   <view wx:if="{{keyboard_height == 0}}" id="input-block-bottom"></view>
 </view>
 <view wx:else class="comment-input-closed"><text>便利贴功能已被关闭... QAQ</text></view>
+
+<modifyUserInfo bind:userInfoUpdated="onUserInfoUpdated" show="{{showEdit}}" bind:close="closeEdit"></modifyUserInfo>
